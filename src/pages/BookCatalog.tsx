@@ -11,7 +11,7 @@ import {
     Typography,
 } from "@mui/material";
 
-const BookList = () => {
+const BookCatalog = () => {
     const [books, setBooks] = useState<Book[]>([]);
     const [selectedBookIds, setSelectedBookIds] = useState<number[]>([]);
     const navigate = useNavigate();
@@ -48,15 +48,11 @@ const BookList = () => {
         } else {
             try {
                 await axios.post(`/carts/add/${bookId}`);
-                setSelectedBookIds((prev) => [...prev, bookId]); // Add to list
+                setSelectedBookIds((prev) => [...prev, bookId]);
             } catch {
                 alert("Please log in to add to cart");
             }
         }
-    };
-
-    const handleCheckout = () => {
-        navigate("/cart");
     };
 
     return (
@@ -74,7 +70,6 @@ const BookList = () => {
                                     sx={{
                                         height: "100%",
                                         backgroundColor: isSelected ? "#e8f5e9" : "inherit",
-                                        transition: "background-color 0.3s ease",
                                         cursor: "pointer",
                                     }}
                                     onClick={() => toggleBookSelection(book.id)}
@@ -104,7 +99,7 @@ const BookList = () => {
                 </Grid>
                 {books.length > 0 && (
                     <Box textAlign="center" mt={4}>
-                        <Button variant="contained" onClick={handleCheckout}>
+                        <Button variant="contained" onClick={() => navigate("/cart")}>
                             Go to Cart / Checkout
                         </Button>
                     </Box>
@@ -114,4 +109,4 @@ const BookList = () => {
     );
 };
 
-export default BookList;
+export default BookCatalog;

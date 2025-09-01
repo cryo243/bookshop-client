@@ -20,7 +20,8 @@ const Login = () => {
     const handleLogin = async () => {
         try {
             const res = await axios.post("/auth/login", { username, password });
-            localStorage.setItem("token", res.data);
+            localStorage.setItem("token", res.data.token);
+            localStorage.setItem("role", res.data.role);
             navigate("/");
         } catch (err) {
             alert("Invalid credentials");
