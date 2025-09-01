@@ -34,12 +34,13 @@ const Register = () => {
     });
 
     const [showQR, setShowQR] = useState(false);
-
+    const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
     const navigate = useNavigate();
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setForm((prev) => ({ ...prev, [name]: value }));
+        setValidationErrors((prev) => ({ ...prev, [name]: "" })); // Clear error on input change
     };
 
     const handleRoleChange = (e: any) => {
@@ -53,7 +54,8 @@ const Register = () => {
     const handleRegister = async () => {
         try {
             const res = await axios.post("/auth/register", form);
-            if (res.data.using2FA && res.data.mfaUri) {
+
+            if (res.data.isUsing2FA && res.data.mfaUri) {
                 setForm((prev) => ({
                     ...prev,
                     mfaUri: res.data.mfaUri,
@@ -64,9 +66,24 @@ const Register = () => {
                 navigate("/login");
             }
         } catch (err: any) {
-            alert(err.response?.data?.message || "Registration failed");
+            if (err.response?.status === 400 && err.response?.data) {
+                setValidationErrors(err.response.data); // Set backend validation errors
+            } else {
+                alert(err.response?.data?.message || "Registration failed");
+            }
         }
     };
+
+    const fields = [
+        "username",
+        "password",
+        "name",
+        "surname",
+        "email",
+        "address",
+        "phoneNumber",
+        "dateOfBirth",
+    ];
 
     return (
         <Container maxWidth="sm">
@@ -77,50 +94,57 @@ const Register = () => {
                             Register
                         </Typography>
 
-                        {!showQR? (<>
-                            {[
-                                "username",
-                                "password",
-                                "name",
-                                "surname",
-                                "email",
-                                "address",
-                                "phoneNumber",
-                                "dateOfBirth",
-                            ].map((field) => (
-                                <TextField
-                                    key={field}
-                                    fullWidth
-                                    margin="normal"
-                                    name={field}
-                                    type={field === "password" ? "password" : field === "dateOfBirth" ? "date" : "text"}
-                                    label={field.charAt(0).toUpperCase() + field.slice(1)}
-                                    InputLabelProps={field === "dateOfBirth" ? { shrink: true } : undefined}
-                                    value={form[field as keyof typeof form]}
-                                    onChange={handleInputChange}
+                        {!showQR && (
+                            <>
+                                {fields.map((field) => (
+                                    <TextField
+                                        key={field}
+                                        fullWidth
+                                        margin="normal"
+                                        name={field}
+                                        type={
+                                            field === "password"
+                                                ? "password"
+                                                : field === "dateOfBirth"
+                                                    ? "date"
+                                                    : "text"
+                                        }
+                                        label={field.charAt(0).toUpperCase() + field.slice(1)}
+                                        InputLabelProps={field === "dateOfBirth" ? { shrink: true } : undefined}
+                                        value={form[field as keyof typeof form]}
+                                        onChange={handleInputChange}
+                                        error={!!validationErrors[field]}
+                                        helperText={validationErrors[field] || ""}
+                                    />
+                                ))}
+
+                                {/* Role Dropdown */}
+                                <FormControl fullWidth margin="normal">
+                                    <InputLabel id="role-label">Role</InputLabel>
+                                    <Select labelId="role-label" value={form.role} onChange={handleRoleChange}>
+                                        <MenuItem value="USER">USER</MenuItem>
+                                        <MenuItem value="ADMIN">ADMIN</MenuItem>
+                                    </Select>
+                                </FormControl>
+
+                                {/* MFA Toggle */}
+                                <FormControlLabel
+                                    control={<Checkbox checked={form.isUsing2FA} onChange={handleMfaToggle} />}
+                                    label="Enable MFA (Google Authenticator)"
                                 />
-                            ))}
 
-                            {/* Role Dropdown */}
-                            <FormControl fullWidth margin="normal">
-                                <InputLabel id="role-label">Role</InputLabel>
-                                <Select labelId="role-label" value={form.role} onChange={handleRoleChange}>
-                                    <MenuItem value="USER">USER</MenuItem>
-                                    <MenuItem value="ADMIN">ADMIN</MenuItem>
-                                </Select>
-                            </FormControl>
+                                <Button variant="contained" fullWidth sx={{ mt: 2 }} onClick={handleRegister}>
+                                    Register
+                                </Button>
 
-                            {/* MFA Toggle */}
-                            <FormControlLabel
-                                control={<Checkbox checked={form.isUsing2FA} onChange={handleMfaToggle} />}
-                                label="Enable MFA (Google Authenticator)"
-                            />
-
-                            <Button variant="contained" fullWidth sx={{ mt: 2 }} onClick={handleRegister}>
-                                Register
-                            </Button>
-                        </>):(<></>)}
-
+                                {/* General error display */}
+                                {validationErrors.general && (
+                                    <Typography color="error" sx={{ mt: 1 }}>
+                                        {validationErrors.general}
+                                    </Typography>
+                                )}
+                            </>
+                        )}
 
                         {showQR && form.mfaUri && (
                             <div style={{ textAlign: "center", marginTop: "20px" }}>
