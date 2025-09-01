@@ -55,7 +55,7 @@ const Register = () => {
         try {
             const res = await axios.post("/auth/register", form);
 
-            if (res.data.isUsing2FA && res.data.mfaUri) {
+            if (res.data.using2FA && res.data.mfaUri) {
                 setForm((prev) => ({
                     ...prev,
                     mfaUri: res.data.mfaUri,
